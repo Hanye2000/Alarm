@@ -4,16 +4,30 @@ const SHEET_URL =
 async function loadMessage() {
   try {
     const res = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error("Nie można pobrać danych z arkusza");
+
     const rows = await res.json();
+    if (!rows.length) throw new Error("Brak danych w arkuszu");
+
     const last = rows[rows.length - 1];
 
     const statusEl = document.getElementById("status");
     const updatedEl = document.getElementById("updated");
 
-    statusEl.textContent = last.Message;
-    statusEl.className = last.Type; // must match CSS classes
+    // Update message text
+    statusEl.textContent = last.Message || "Brak wiadomości";
 
-    // Parse timestamp manually for dd.mm.yyyy hh:mm:ss format
+    // Apply CSS class based on type
+    const type = last.Type?.toLowerCase();
+    if (type === "alert") {
+      statusEl.className = "alert";
+    } else if (type === "safe") {
+      statusEl.className = "safe";
+    } else {
+      statusEl.className = ""; // default styling for unknown types like "info"
+    }
+
+    // Parse European timestamp: dd.mm.yyyy hh:mm:ss
     const [datePart, timePart] = last.Timestamp.split(" ");
     const [day, month, year] = datePart.split(".");
     const formattedDate = new Date(`${year}-${month}-${day}T${timePart}`);
@@ -22,17 +36,7 @@ async function loadMessage() {
 
   } catch (err) {
     console.error(err);
-    document.getElementById("status").textContent =
-      "Błąd ładowania danych";
-  }
-}
-
-loadMessage();
-setInterval(loadMessage, 30000);
-
-
-
-
-
-
-
+    const statusEl = document.getElementById("status");
+    statusEl.textContent = "Błąd ładowania danych";
+    statusEl.className = "";
+    document.getElementById("updated").textCo
